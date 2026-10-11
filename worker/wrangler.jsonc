@@ -7,7 +7,7 @@
   "vars": {
     "ALLOWED_ORIGIN": "https://tgelemental.github.io",
     "GAME_URL": "https://tgelemental.github.io/Elemental/",
-    "GAME_SHORT_NAME": "elemental"
+    "GAME_SHORT_NAME": "elementals"
   },
   "d1_databases": [
     {

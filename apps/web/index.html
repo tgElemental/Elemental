@@ -13,33 +13,128 @@
 <body>
 <div id="app">
   <header class="hud">
-    <div class="identity"><img src="./mark.svg" alt="نشان عناصر"><div><span class="identity-name">عــنــاصــر</span><small>REALM OF ELEMENTS</small></div></div>
-    <div class="hud-points"><span>امتیاز جهان</span><strong id="score">۰</strong></div>
+    <div class="identity">
+      <img src="./mark.svg" alt="نشان عناصر">
+      <div>
+        <span class="identity-name">عــنــاصــر</span>
+        <small>ELEMENTALS / REALM OF FORCES</small>
+      </div>
+    </div>
+    <div class="hud-points">
+      <span>امتیاز جهان</span>
+      <strong id="score">۰</strong>
+    </div>
     <button id="sound" class="sound" aria-label="تغییر صدا" title="بازخورد صوتی" type="button">♪</button>
   </header>
+
   <div id="demo" class="practice-banner" hidden>حالت تمرینی — برای ثبت امتیاز، از پیام Game تلگرام وارد شو</div>
-  <div class="intro"><div class="eyebrow">فصل اول • آستانهٔ آفرینش</div><h1>تعادل را <em>بیدار کن</em></h1><p id="weather">جهان هر روز قوانین تازه‌ای دارد.</p></div>
+
+  <div class="intro">
+    <div class="eyebrow">فصل اول • آستانهٔ آفرینش</div>
+    <h1>قلمرو <em>عناصر</em></h1>
+    <p id="weather">جهان هر روز قوانین تازه‌ای دارد.</p>
+  </div>
+
   <div class="arena-wrap" id="arena" data-state="idle" role="img" aria-label="میدان نبرد تعاملی چهار عنصر">
     <div id="pixi-stage" class="pixi-stage"></div>
-    <div class="drop-zone" aria-hidden="true"><span>رها کن</span></div>
-    <div class="arena-caption"><span class="cross-icon">✥</span><span id="arenaHint">یک کارت را بکش و درون شکاف رها کن</span><small id="arenaMeta">یا فقط روی کارت ضربه بزن</small></div>
-    <div class="rift-title">THE RIFT / 01</div>
+    <div class="arena-status"><span>THE RIFT <b>✧</b> نبرد عناصر</span><span id="arena-weather">قلمرو در انتظار نیروست</span></div>
+    <div class="drop-zone" aria-hidden="true"><span>پرتاب کن</span></div>
+    <div class="battle-stage" id="battle-stage" aria-hidden="true"></div>
+    <div class="battle-toast" id="battle-toast" role="status" aria-live="polite" hidden><span id="toast-title"></span><strong id="toast-points"></strong><small id="toast-reaction"></small></div>
+    <div class="arena-caption">
+      <span class="cross-icon">✥</span>
+      <span id="arenaHint">یک کارت را بکش و درون شکاف رها کن</span>
+      <small id="arenaMeta">یا فقط روی کارت ضربه بزن</small>
+    </div>
+
   </div>
-  <div class="score-line" aria-live="polite"><div><small>نبردها</small><strong id="rounds">۰</strong></div><span class="score-separator"></span><div><small>رویش</small><strong id="trees">۰</strong></div><span class="score-separator"></span><div><small>نور</small><strong id="lights">۰</strong></div><span class="score-separator"></span><div><small>پیروزی‌های پیاپی</small><strong id="streak">۰</strong></div></div>
-  <section class="hand" aria-label="انتخاب نیروی نبرد"><div class="hand-label"><span>نیروهای تو</span><span class="hand-guide">بکش، رها کن، برخورد را تماشا کن</span></div>
+
+  <div class="score-line" aria-live="polite">
+    <div><small>نبردها</small><strong id="rounds">۰</strong></div>
+    <span class="score-separator"></span>
+    <div><small>رویش</small><strong id="trees">۰</strong></div>
+    <span class="score-separator"></span>
+    <div><small>نور</small><strong id="lights">۰</strong></div>
+    <span class="score-separator"></span>
+    <div><small>پیروزی‌های پیاپی</small><strong id="streak">۰</strong></div>
+  </div>
+
+  <section class="hand" aria-label="انتخاب نیروی نبرد">
+    <div class="hand-label">
+      <span>دست کارت‌های تو</span>
+      <span class="hand-guide">بکش به میدان • روی هم یعنی تعداد کارت‌ها</span>
+    </div>
+
     <div class="force-grid" id="force-grid">
-      <button type="button" class="force water" data-force="water"><span class="force-sheen"></span><span class="force-number">01 / WATER</span><span class="force-glyph">◈</span><span class="force-name">آب</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-water"></span></span><span class="force-bottom"><small id="stock-water">۵</small><i class="force-usage"></i></span></button>
-      <button type="button" class="force fire" data-force="fire"><span class="force-sheen"></span><span class="force-number">02 / FIRE</span><span class="force-glyph">✦</span><span class="force-name">آتش</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-fire"></span></span><span class="force-bottom"><small id="stock-fire">۵</small><i class="force-usage"></i></span></button>
-      <button type="button" class="force earth" data-force="earth"><span class="force-sheen"></span><span class="force-number">03 / EARTH</span><span class="force-glyph">⬡</span><span class="force-name">خاک</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-earth"></span></span><span class="force-bottom"><small id="stock-earth">۵</small><i class="force-usage"></i></span></button>
-      <button type="button" class="force wind" data-force="wind"><span class="force-sheen"></span><span class="force-number">04 / WIND</span><span class="force-glyph">≋</span><span class="force-name">باد</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-wind"></span></span><span class="force-bottom"><small id="stock-wind">۵</small><i class="force-usage"></i></span></button>
+      <button type="button" class="force water" data-force="water">
+        <span class="force-code">01 / WATER</span>
+        <span class="force-stack" aria-hidden="true">
+          <span class="stack-face">
+            <span class="force-glyph">◈</span>
+            <span class="force-name">آب</span>
+            <span class="force-flavor"></span>
+          </span>
+        </span>
+        <span class="force-bottom"><b class="force-status"></b><i class="force-usage"></i></span>
+      </button>
+
+      <button type="button" class="force fire" data-force="fire">
+        <span class="force-code">02 / FIRE</span>
+        <span class="force-stack" aria-hidden="true">
+          <span class="stack-face">
+            <span class="force-glyph">✦</span>
+            <span class="force-name">آتش</span>
+            <span class="force-flavor"></span>
+          </span>
+        </span>
+        <span class="force-bottom"><b class="force-status"></b><i class="force-usage"></i></span>
+      </button>
+
+      <button type="button" class="force earth" data-force="earth">
+        <span class="force-code">03 / EARTH</span>
+        <span class="force-stack" aria-hidden="true">
+          <span class="stack-face">
+            <span class="force-glyph">⬡</span>
+            <span class="force-name">خاک</span>
+            <span class="force-flavor"></span>
+          </span>
+        </span>
+        <span class="force-bottom"><b class="force-status"></b><i class="force-usage"></i></span>
+      </button>
+
+      <button type="button" class="force wind" data-force="wind">
+        <span class="force-code">04 / WIND</span>
+        <span class="force-stack" aria-hidden="true">
+          <span class="stack-face">
+            <span class="force-glyph">≋</span>
+            <span class="force-name">باد</span>
+            <span class="force-flavor"></span>
+          </span>
+        </span>
+        <span class="force-bottom"><b class="force-status"></b><i class="force-usage"></i></span>
+      </button>
     </div>
   </section>
-  <div class="actions"><button type="button" id="share" class="action-primary">دعوت یک نگهبان تازه <span>↗</span></button><button type="button" id="ranking" class="action-muted">جدول برترین‌ها <span>♜</span></button></div>
+
+  <div class="actions">
+    <button type="button" id="share" class="action-primary">دعوت <span>↗</span></button>
+    <button type="button" id="ranking" class="action-muted">نگهبانان <span>♜</span></button>
+  </div>
+
   <div id="notice" role="status" aria-live="polite" class="notice" hidden></div>
-  <footer>ELEMENTAL <span>✧</span> CHRONICLES OF BALANCE <span>✧</span> 2026</footer>
+
 </div>
-<dialog id="result" class="result-dialog"><div class="result-panel"><span class="result-eyebrow">THE ENCOUNTER</span><div id="result-glyph" class="result-glyph">✧</div><h2 id="result-title">نتیجهٔ نبرد</h2><p id="result-desc"></p><div id="versus" class="versus"></div><div id="rewards" class="rewards"></div><button type="button" id="next" class="action-primary">ادامهٔ نبرد <span>←</span></button></div></dialog>
-<dialog id="leaderboard" class="result-dialog"><div class="result-panel"><span class="result-eyebrow">THE KEEPERS</span><h2>نگهبانان این هفته</h2><div id="leader-list" class="leader-list"></div><button type="button" id="close-ranking" class="action-primary">بازگشت به جهان ←</button></div></dialog>
+
+
+<dialog id="leaderboard" class="result-dialog">
+  <div class="result-panel">
+    <span class="result-eyebrow">THE KEEPERS</span>
+    <h2>نگهبانان این هفته</h2>
+    <div id="leader-list" class="leader-list"></div>
+    <button type="button" id="close-ranking" class="action-primary">بازگشت به جهان ←</button>
+  </div>
+</dialog>
+
 <script src="https://telegram.org/js/games.js" defer></script>
 <script type="module" src="./src/main.js"></script>
 </body>
