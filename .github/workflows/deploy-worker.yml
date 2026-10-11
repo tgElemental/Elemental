@@ -10,6 +10,11 @@ jobs:
   deploy:
     environment: production
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CI: 'true'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,11 +26,22 @@ jobs:
         run: npm test && python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Install Wrangler
         run: npm install --no-audit --no-fund
-      - name: Apply database migrations and deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Verify Cloudflare credentials
+        shell: bash
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID"
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo '::error::Missing CLOUDFLARE_API_TOKEN'; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo '::error::Missing CLOUDFLARE_ACCOUNT_ID'; exit 1; }
+      - name: Resolve production D1 ID from Cloudflare account
+        shell: bash
+        run: |
+          set -euo pipefail
+          npx --no-install wrangler d1 list --json > "$RUNNER_TEMP/elemental-d1.json"
+          node scripts/resolve-d1.mjs "$RUNNER_TEMP/elemental-d1.json"
+      - name: Apply migrations and deploy Worker
+        run: |
           npm run db:migrate
           npm run deploy:api
+      - name: Deployment notes
+        run: |
+          echo 'Inspect the Worker URL in deployment logs.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Then set the GitHub Actions variable ELEMENTAL_API_BASE to its HTTPS origin and trigger Pages.' >> "$GITHUB_STEP_SUMMARY"

@@ -1,5 +1,7 @@
 import {ELEMENTS, resolveRound, worldForDay, weekForDay} from '../../apps/web/engine.js';
 import {verifyInitData} from './auth.js';
+import {verifyGameTicket} from './game-ticket.js';
+import {processTelegramUpdate, postGameScore} from './telegram-bot.js';
 
 const JSON_HEADERS={'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'};
 const encode = obj => JSON.stringify(obj);
@@ -16,7 +18,7 @@ function corsFor(req,env){
   return origin && origin===allow ? {
     'access-control-allow-origin':origin,
     'access-control-allow-methods':'GET, POST, OPTIONS',
-    'access-control-allow-headers':'content-type,x-telegram-init-data',
+    'access-control-allow-headers':'content-type,authorization,x-telegram-init-data',
     'access-control-max-age':'3600',
     'vary':'Origin'
   }:{};
@@ -34,8 +36,10 @@ function currentView(player,day){
 async function getPlayer(db,id){return db.prepare(`SELECT ${playerFields} FROM players WHERE id=?`).bind(id).first();}
 async function session(env,who,data,day){
   const code=randCode();
-  // Only trust Telegram-signed start_param, never a client-submitted referral code.
-  const requested=String(who.startParam||'').replace(/^ref_/,'');
+  // For Game launches, referral comes from /start delivered via the authenticated bot webhook.
+  // Legacy Mini App starts can still use Telegram-signed start_param.
+  const pending=await env.DB.prepare('SELECT invite_code FROM pending_invites WHERE player_id=?').bind(who.id).first();
+  const requested=String(who.startParam||pending?.invite_code||'').replace(/^ref_/,'');
   const inviter=/^[0-9a-f]{12}$/i.test(requested)?await env.DB.prepare('SELECT id FROM players WHERE invite_code=?').bind(requested).first():null;
   const referrer=inviter?.id===who.id?null:(inviter?.id??null);
   const p=env.DB.prepare('INSERT INTO players (id,alias,invite_code,referrer_id) VALUES (?,?,?,?) ON CONFLICT(id) DO NOTHING').bind(who.id,publicAlias(code),code,referrer);
@@ -61,7 +65,9 @@ async function play(env,who,data,day){
   const result=await env.DB.prepare(sql).bind(actionId,pick,rival,round.outcome,round.basePoints,round.outcome,round.tree,round.light,world.key,week,who.id).run();
   const recorded=await env.DB.prepare('SELECT action_id,picked,rival,outcome,points,tree_gain,light_gain,weather_key FROM rounds WHERE action_id=? AND player_id=?').bind(actionId,who.id).first();
   if(!recorded) throw new Error('NO_ELEMENTS');
-  return {...currentView(await getPlayer(env.DB,who.id),day),round:recorded,replay:result?.meta?.changes===0};
+  const player=await getPlayer(env.DB,who.id);
+  if(result?.meta?.changes && recorded.points>0 && who.mode==='game')await postGameScore(env,who,player.score);
+  return {...currentView(player,day),round:recorded,replay:result?.meta?.changes===0};
 }
 async function leaderboard(env,day){
   const week=weekForDay(day);
@@ -80,13 +86,24 @@ export default {
         : respond({error:'FORBIDDEN'},403);
     }
     if(request.headers.get('Origin')&&request.headers.get('Origin')!==env.ALLOWED_ORIGIN) return respond({error:'FORBIDDEN'},403);
-    if(url.pathname==='/health'&&request.method==='GET') return respond({ok:true,version:'0.1.0'});
+    if(url.pathname==='/health'&&request.method==='GET') return respond({ok:true,version:'0.2.0-game'});
+    if(url.pathname==='/telegram/webhook'){
+      if(request.method!=='POST'||!env.TELEGRAM_WEBHOOK_SECRET||!env.BOT_TOKEN||!env.DB)return respond({error:'NOT_CONFIGURED'},503);
+      if(request.headers.get('X-Telegram-Bot-Api-Secret-Token')!==env.TELEGRAM_WEBHOOK_SECRET)return respond({error:'FORBIDDEN'},403);
+      try{
+        if(Number(request.headers.get('content-length')||0)>65536)return respond({ok:true});
+        const raw=await request.text();if(raw.length>65536)return respond({ok:true});
+        const update=JSON.parse(raw);await processTelegramUpdate(update,env);return respond({ok:true});
+      }
+      catch(error){console.error('Telegram webhook failure',String(error));return respond({error:'INTERNAL'},500);}
+    }
     try{
       const day=today();
       if(url.pathname==='/api/leaderboard'&&request.method==='GET')return respond(await leaderboard(env,day));
       if(request.method!=='POST'||!['/api/session','/api/play'].includes(url.pathname))return respond({error:'NOT_FOUND'},404);
       if(!env.BOT_TOKEN||!env.DB||!env.ALLOWED_ORIGIN)throw new Error('SERVER_CONFIG');
-      const who=await verifyInitData(request.headers.get('x-telegram-init-data'),env.BOT_TOKEN);
+      const bearer=request.headers.get('authorization')?.match(/^Bearer ([a-zA-Z0-9_.-]+)$/)?.[1];
+      const who=bearer?await verifyGameTicket(bearer,env.BOT_TOKEN):await verifyInitData(request.headers.get('x-telegram-init-data'),env.BOT_TOKEN);
       const data=await bodyOf(request);
       if(url.pathname==='/api/session')return respond(await session(env,who,data,day));
       return respond(await play(env,who,data,day));

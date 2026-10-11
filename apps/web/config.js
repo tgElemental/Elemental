@@ -1,5 +1,6 @@
-// Change after deploying Cloudflare Worker. No bot token or other secret here.
+// Public only. Secrets live exclusively in Cloudflare Worker settings.
 window.ELEMENTAL_CONFIG = {
   apiBase: 'https://elemental-api.zed-ai.workers.dev',
-  botUsername: 'elementalgamebot'
+  botUsername: 'elementalgamebot',
+  gameShortName: 'elemental'
 };
