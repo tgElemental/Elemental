@@ -1,0 +1,32 @@
+name: Deploy Telegram Serverless (manual)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: elemental-telegram-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    environment: production
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install CLI
+        run: npm install --no-audit --no-fund
+      - name: Verify and deploy
+        env:
+          TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
+          CI: 'true'
+        run: |
+          test -n "$TGCLOUD_TOKEN"
+          echo "::add-mask::$TGCLOUD_TOKEN"
+          npm run check
+          npx --no-install tgcloud fetch
+          npx --no-install tgcloud status
+          npx --no-install tgcloud push

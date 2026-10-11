@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#07131d"/>
+  <meta name="description" content="عناصر — چرخهٔ جهان. یک بازی متفاوت در تلگرام."/>
+  <title>عناصر — چرخهٔ جهان</title>
+  <link rel="icon" type="image/svg+xml" href="./mark.svg"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+<div class="aura aura-one"></div><div class="aura aura-two"></div>
+<main class="app" id="app">
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-mark" src="./mark.svg" alt="نشان عناصر" />
+      <div><strong>عـنـاصـر</strong><small>CHRONICLES OF BALANCE</small></div>
+    </div>
+    <button class="icon-btn" id="shareTop" type="button" title="دعوت دوستان" aria-label="دعوت دوستان"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M18 8a3 3 0 1 0-2.8-4M6 12l12-7M6 12l12 7M6 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm18 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" transform="translate(-3 0)"/></svg></button>
+  </header>
+  <div class="demo-banner" id="demoBanner" hidden>نسخهٔ تمرینی · نتیجه‌ها ذخیره نمی‌شوند</div>
+  <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+  <div class="view visible" id="view-arena">
+    <section class="chapter">
+      <div class="eyebrow"><span class="tiny-star">✧</span> فصل نخست / بیداری</div>
+      <h1>جهان در دستان <span>توست.</span></h1>
+      <p>هر انتخاب، جرقه‌ای در چرخهٔ حیات است.<br/>عنصرت را برگزین و تعادل را برگردان.</p>
+    </section>
+    <section class="world-orbit" aria-label="چرخهٔ جهان">
+      <div class="orbit outer"></div><div class="orbit inner"></div>
+      <span class="orbit-mark mark-n">✧</span><span class="orbit-mark mark-s">✦</span>
+      <div class="world-core">
+        <div class="world-core-ring"></div>
+        <div class="world-planet"><div class="planet-light"></div></div>
+      </div>
+      <div class="orbit-label"><span class="orbit-label-eyebrow">امروز در جهان</span><b id="weatherTitle">—</b><small id="weatherDescription">—</small></div>
+    </section>
+    <section class="resources" aria-label="منابع جهان">
+      <div class="resource"><span class="res-icon">♧</span><div><strong id="treeCount">۰</strong><small>درخت</small></div></div>
+      <div class="divider-v"></div>
+      <div class="resource"><span class="res-icon light">✺</span><div><strong id="lightCount">۰</strong><small>نور</small></div></div>
+      <div class="divider-v"></div>
+      <div class="resource"><span class="res-icon score">✧</span><div><strong id="scoreCount">۰</strong><small>امتیاز</small></div></div>
+    </section>
+    <section class="elements-area">
+      <div class="section-title"><div><span class="overline">THE FOUR FORCES</span><h2>قدرتت را انتخاب کن</h2></div><span class="round-chip">راند <b id="roundCount">۰</b></span></div>
+      <div class="element-grid">
+        <button type="button" class="element-card water" data-element="water"><span class="card-top"><span>۰۱ / WATER</span><b class="element-stock" id="stock-water">۵</b></span><span class="element-art water-art">◈</span><span class="card-bottom"><b>آب</b><small>زندگی و جریان</small></span></button>
+        <button type="button" class="element-card fire" data-element="fire"><span class="card-top"><span>۰۲ / FIRE</span><b class="element-stock" id="stock-fire">۵</b></span><span class="element-art fire-art">✦</span><span class="card-bottom"><b>آتش</b><small>شور و دگرگونی</small></span></button>
+        <button type="button" class="element-card earth" data-element="earth"><span class="card-top"><span>۰۳ / EARTH</span><b class="element-stock" id="stock-earth">۵</b></span><span class="element-art earth-art">⬡</span><span class="card-bottom"><b>خاک</b><small>ریشه و استواری</small></span></button>
+        <button type="button" class="element-card wind" data-element="wind"><span class="card-top"><span>۰۴ / WIND</span><b class="element-stock" id="stock-wind">۵</b></span><span class="element-art wind-art">≋</span><span class="card-bottom"><b>باد</b><small>آزادی و حرکت</small></span></button>
+      </div>
+      <div class="bottom-hint">عنصری انتخاب کن تا با نیروی ناشناخته روبه‌رو شوی <span>←</span></div>
+    </section>
+  </div>
+  <div class="view" id="view-world">
+    <div class="page-intro"><div class="eyebrow">ATLAS / WORLD</div><h1>نقشهٔ جهان</h1><p>جهان هر روز تغییر می‌کند. با ساخت درخت و نور، ردپایت را در تاریخ آن ثبت کن.</p></div>
+    <div class="atlas-panel"><span class="atlas-ornament">✺</span><small>رویداد کنونی</small><h2 id="atlasWeather">—</h2><p id="atlasDetail">—</p></div>
+    <div class="progress-block"><div><span>رشد جنگل</span><b id="atlasTrees">۰</b></div><div class="meter"><span id="treeMeter"></span></div><small>هر برخورد آب و خاک، درخت تازه‌ای به جهان می‌افزاید.</small></div>
+    <div class="progress-block"><div><span>بازگشت نور</span><b id="atlasLights">۰</b></div><div class="meter gold"><span id="lightMeter"></span></div><small>برخورد آتش و باد، نور خلق می‌کند.</small></div>
+    <div class="roadmap-teaser"><b>فصل‌های بعدی</b><p>زیست‌بوم‌های جدید، چالش‌های متغیر، ترکیب‌های پیشرفته و روایت زندهٔ جهان در نقشهٔ راه هستند.</p></div>
+  </div>
+  <div class="view" id="view-ranking">
+    <div class="page-intro"><div class="eyebrow">THE KEEPERS</div><h1>نگهبانان تعادل</h1><p>هر هفته یک چرخهٔ تازه آغاز می‌شود؛ بهترین‌ها در تاریخ جهان می‌مانند.</p></div>
+    <div class="my-stats"><small>امتیاز این هفته</small><strong id="weekScore">۰</strong><span id="weekLabel">—</span></div>
+    <h2 class="ranking-heading">برترین‌های هفته</h2>
+    <div class="ranking-list" id="rankingList"><p class="muted">هنوز نگهبانی در جدول نیست.</p></div>
+    <button class="secondary-btn" id="shareRanking" type="button">دعوت یک نگهبان تازه ↗</button>
+  </div>
+  <div class="view" id="view-guide">
+    <div class="page-intro"><div class="eyebrow">CODEX / ORIGIN</div><h1>راز چهار عنصر</h1><p>یک قانون ساده؛ بی‌نهایت انتخاب، هر روز در جهانی تازه.</p></div>
+    <div class="rule-ring"><div class="r-item">◈ <span>آب</span></div><div class="r-arrow">←</div><div class="r-item">✦ <span>آتش</span></div><div class="r-arrow">←</div><div class="r-item">⬡ <span>خاک</span></div><div class="r-arrow">←</div><div class="r-item">≋ <span>باد</span></div></div>
+    <article class="rule"><b>۰۱ / نبرد</b><p>آب بر آتش، آتش بر خاک، خاک بر باد و باد بر آب غلبه می‌کند. پیروزی ۳ امتیاز و تساوی ۱ امتیاز دارد.</p></article>
+    <article class="rule"><b>۰۲ / آفرینش</b><p>برخورد آب و خاک یک «درخت»، و برخورد آتش و باد یک «نور» می‌سازد؛ حتی وقتی نبرد را ببازی.</p></article>
+    <article class="rule"><b>۰۳ / جهان زنده</b><p>هر روز یک نیروی تازه در جهان برتری می‌گیرد؛ پیروزی با عنصر همسو، امتیاز افزوده دارد. بردهای متوالی هم پاداش می‌آورند.</p></article>
+    <article class="rule"><b>۰۴ / منابع و دعوت</b><p>هر روز پنج کارت از هر عنصر دریافت می‌کنی. با دعوت موفق یک بازیکن تازه نیز هر چهار موجودی‌ات پنج عدد افزایش می‌یابد.</p></article>
+    <button type="button" class="secondary-btn" id="shareGuide">دعوت دوستان و ساختن جهان ↗</button>
+  </div>
+  <nav class="bottom-nav" aria-label="ناوبری بازی">
+    <button class="nav-btn active" data-view="arena" aria-label="میدان بازی"><span>✥</span><small>میدان</small></button>
+    <button class="nav-btn" data-view="world" aria-label="نقشهٔ جهان"><span>◎</span><small>جهان</small></button>
+    <button class="nav-btn" data-view="ranking" aria-label="رتبه‌بندی"><span>♜</span><small>نگهبانان</small></button>
+    <button class="nav-btn" data-view="guide" aria-label="راهنمای بازی"><span>⌘</span><small>راهنما</small></button>
+  </nav>
+</main>
+<dialog class="result-modal" id="resultModal" aria-labelledby="resultTitle">
+  <div class="modal-body"><div class="result-symbol" id="resultSymbol">✦</div><small class="overline">THE ENCOUNTER</small><h2 id="resultTitle">نتیجهٔ برخورد</h2><p id="resultDescription">—</p><div class="battle-row"><div><small>عنصر تو</small><b id="yourElement">—</b></div><span>×</span><div><small>عنصر جهان</small><b id="rivalElement">—</b></div></div><div class="result-rewards" id="resultRewards"></div><button class="primary-btn" id="closeResult" type="button">ادامهٔ ماجراجویی <span>←</span></button></div>
+</dialog>
+<script src="./config.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
