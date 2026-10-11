@@ -9,7 +9,7 @@ Telegram's classic Game callbacks **do not provide** signed Mini App `initData` 
 ## BotFather owner steps (required once)
 
 1. Open @BotFather, choose the Elemental bot and issue `/newgame`.
-2. Register the HTML5 Game with **the exact short name configured as `GAME_SHORT_NAME`** in `worker/wrangler.jsonc` (starter default: `elemental`).
+2. Register the HTML5 Game with **the exact short name configured as `GAME_SHORT_NAME`** in `worker/wrangler.jsonc` (starter default: `elementals`).
 3. Give BotFather the Game URL `https://tgelemental.github.io/Elemental/` and an image/description. Check the URL's registered domain and make sure Telegram accepts the URL returned by `answerCallbackQuery` with a unique query string.
 4. Verify bot username in `apps/web/config.js`.
 
@@ -57,3 +57,20 @@ Set repository Actions variable `ELEMENTAL_API_BASE` to the public **origin** of
 - https://core.telegram.org/bots/api#sendgame
 - https://core.telegram.org/bots/api#answercallbackquery
 - https://core.telegram.org/bots/api#setgamescore
+
+## Elementals game-feel controls (October 2026)
+
+The official BotFather Game short name is `elementals` and its player entrypoint is
+`https://t.me/ElementalGameBot?game=elementals`. `GAME_SHORT_NAME` in the Worker
+and `gameShortName` in the public frontend must both match. After merging a
+short-name change, run the **manual** Cloudflare Worker deployment workflow;
+GitHub Pages alone does not update the bot.
+
+The arena offers one physical card for each available elemental charge, with
+real stacked layers instead of numeric counters. Drag a card into the central
+orb (or tap for accessibility). The server picks the opposing element and
+awards points and synthesis. Canvas animations, particle effects, and haptics
+never determine rewards; they only display the server's signed-game outcome.
+
+The result appears in the arena, not a modal, so play continues without an
+extra dismissal step. Honor reduced-motion settings; sound defaults to off.

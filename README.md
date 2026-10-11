@@ -36,7 +36,7 @@ Run Vite in an ordinary browser for **practice only**. Real Telegram scoring is 
 
 Follow **[the complete Game deployment guide](docs/TELEGRAM_GAME.md)**. The summary:
 
-1. BotFather `/newgame` with Game short name matching `GAME_SHORT_NAME` (default `elemental`) and URL `https://tgelemental.github.io/Elemental/`.
+1. BotFather `/newgame` with Game short name matching `GAME_SHORT_NAME` (default `elementals`) and URL `https://tgelemental.github.io/Elemental/`.
 2. Cloudflare Worker secret `BOT_TOKEN` (already used in v0.1) and **new** `TELEGRAM_WEBHOOK_SECRET`; deploy D1 migration `0002_pending_invites.sql` and Worker.
 3. GitHub Pages Actions variable `ELEMENTAL_API_BASE` is optional if the checked-in `apps/web/config.js` is correct; otherwise set it to the Worker HTTPS origin. Deploy the built `dist/` using Pages workflow.
 4. Run `scripts/register-game-webhook.mjs` locally with the BotFather API token and matching webhook secret. Do not deploy the old `tgcloud` handler for the same bot in parallel: only one update consumer owns the bot webhook.
@@ -47,3 +47,7 @@ Review `docs/ARCHITECTURE.md` and `docs/TELEGRAM_GAME.md` before production.
 ## Non-goals of this change
 
 No new real-money/token payouts, crypto wallets, Stars payment flow, complex PvP matchmaking, anti-Sybil guarantees or live weekly reward distribution. These need a separately reviewed product/economy and abuse prevention policy.
+
+## Game feel release
+
+The four elemental decks now render their inventory as physical card layers. The central arena supports drag-and-release with tactile highlighting, an opposing card reveal, per-element particles and synthesis effects. Scores remain server-authoritative. Official Game: `https://t.me/ElementalGameBot?game=elementals`. Configure `GAME_SHORT_NAME=elementals` and redeploy Cloudflare Worker after merging.
