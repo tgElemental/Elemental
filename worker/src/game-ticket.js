@@ -2,9 +2,14 @@
 const enc = new TextEncoder();
 const b64 = bytes => btoa(String.fromCharCode(...bytes)).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
 function unb64(value){
-  if(!/^[\w-]+$/.test(value)||value.length>4096)return null;
+  if(typeof value!=='string'||!/^[A-Za-z0-9_-]+$/.test(value)||value.length>4096||value.length%4===1)return null;
   const raw=value.replaceAll('-','+').replaceAll('_','/');
-  try{return Uint8Array.from(atob(raw.padEnd(Math.ceil(raw.length/4)*4,'=')),c=>c.charCodeAt(0));}catch{return null;}
+  try{
+    const bytes=Uint8Array.from(atob(raw.padEnd(Math.ceil(raw.length/4)*4,'=')),c=>c.charCodeAt(0));
+    // Disallow alternate, non-canonical base64url representations of the same MAC.
+    // Otherwise changing only unused padding bits can leave a ticket valid.
+    return b64(bytes)===value?bytes:null;
+  }catch{return null;}
 }
 async function signature(content, secret){
   const key=await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
