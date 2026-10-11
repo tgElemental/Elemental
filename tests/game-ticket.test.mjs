@@ -14,7 +14,17 @@ test('game tickets verify inline context',async()=>{
 });
 test('game ticket cannot be forged or reused indefinitely',async()=>{
  const t=await issueGameTicket({id:128,chatId:1,messageId:2},token,1000);
- await assert.rejects(()=>verifyGameTicket(t.slice(0,-1)+(t.endsWith('A')?'B':'A'),token,1010),/UNAUTHORIZED/);
+ const [body,mac]=t.split('.');
+ // A 32-byte HMAC has 4 unused bits in the final base64url character.
+ // Flip one unused bit: this MUST be rejected despite decoding to the same bytes.
+ const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+ const last=alphabet.indexOf(mac.at(-1));
+ assert.ok(last>=0);
+ const noncanonical=body+'.'+mac.slice(0,-1)+alphabet[last^1];
+ await assert.rejects(()=>verifyGameTicket(noncanonical,token,1010),/UNAUTHORIZED/);
+ // Changing a meaningful signature character must also be rejected.
+ const tampered=body+'.'+(mac[0]==='A'?'B':'A')+mac.slice(1);
+ await assert.rejects(()=>verifyGameTicket(tampered,token,1010),/UNAUTHORIZED/);
  await assert.rejects(()=>verifyGameTicket(t,'different-secret',1010),/UNAUTHORIZED/);
  await assert.rejects(()=>verifyGameTicket(t,token,4601),/UNAUTHORIZED/);
 });
