@@ -1,6 +1,7 @@
 import '../config.js';
 import {Application, Container, Graphics, Text} from 'pixi.js';
 import {gsap} from 'gsap';
+import {stackBackCount,stackSpacing} from './card-stack.js';
 import {ELEMENTS, ELEMENT_LABELS, resolveRound, worldForDay, weekForDay} from '../engine.js';
 
 const el=id=>document.getElementById(id);
@@ -24,8 +25,10 @@ const colors={water:0x78c9ff,fire:0xffa770,earth:0xc0d58f,wind:0xd6c2fa,neutral:
 const signs={water:'◈',fire:'✦',earth:'⬡',wind:'≋'};
 const forceTags={water:'موج و خاموشی',fire:'فروغ و یورش',earth:'پایداری و ریشه',wind:'شتاب و آشوب'};
 const forceShots={water:'بکش و رها کن',fire:'با ضربه هم می‌شود',earth:'به قلب شکاف پرتاب کن',wind:'سریع‌ترین کارت تو'};
+const forceStates=count=>count<=0?'تهی':count===1?'آخرین کارت':count===2?'دو کارت مانده':'آمادهٔ نبرد';
 const descriptions={win:'نیروی تو بر میدان غلبه کرد.',draw:'دو نیرو به تعادل رسیدند.',loss:'میدان این بار از تو پیشی گرفت.'};
 const resultGlyph={win:'✺',draw:'◎',loss:'◇'};
+const reactionLabels={'earth-water':'رویش جنگل','fire-wind':'انفجار نور','fire-water':'بخار داغ','earth-wind':'توفان شن','earth-fire':'گدازهٔ سوزان','water-wind':'توفان آبی'};
 
 function notice(text){el('notice').hidden=!text;el('notice').textContent=text;}
 function setHint(text,sub=''){
@@ -45,20 +48,42 @@ async function api(path,body){
  if(!response.ok)throw new Error(data.error||'API_ERROR');
  return data;
 }
-function meterLevel(n){return Math.max(.12,Math.min(1,(n||0)/5));}
 function update(){
  el('score').textContent=fmt(player.score);el('rounds').textContent=fmt(player.rounds_played);
  el('trees').textContent=fmt(player.tree);el('lights').textContent=fmt(player.light);el('streak').textContent=fmt(player.streak);
  for(const name of ELEMENTS){
    const count=player[name]||0;
-   el('stock-'+name).textContent=fmt(count);
-   const meter=el('meter-'+name); if(meter) meter.style.transform=`scaleX(${meterLevel(count)})`;
    const btn=document.querySelector(`[data-force="${name}"]`);
    if(btn){
      btn.disabled=busy||count<=0;
      btn.dataset.stockState=count<=0?'empty':count===1?'critical':count<=2?'low':'ok';
+     btn.dataset.count=String(count);
+     btn.querySelector('.force-status').textContent=forceStates(count);
+     renderStack(btn,count);
+     const face=btn.querySelector('.stack-face');
+     if(face) face.classList.toggle('empty',count<=0);
    }
  }
+}
+function renderStack(button,count){
+ // Only touch DOM when an inventory count changes. Every owned card has a physical layer.
+ const stack=button.querySelector('.force-stack');
+ if(!stack||stack.dataset.renderedCount===String(count))return;
+ stack.dataset.renderedCount=String(count);
+ const face=stack.querySelector('.stack-face');
+ stack.querySelectorAll('.stack-card').forEach(card=>card.remove());
+ const backs=stackBackCount(count);
+ const spacing=stackSpacing(count);
+ const fragment=document.createDocumentFragment();
+ for(let depth=backs;depth>=1;depth--){
+   const back=document.createElement('span');
+   back.className='stack-card layer';
+   back.style.setProperty('--depth',String(depth));
+   back.style.setProperty('--step',String(spacing));
+   fragment.append(back);
+ }
+ stack.insertBefore(fragment,face);
+ button.setAttribute('aria-label',`کارت ${ELEMENT_LABELS[button.dataset.force]}، ${fmt(count)} کارت در پشته`);
 }
 function ring(r,color,alpha,width=1){return new Graphics().circle(0,0,r).stroke({color,alpha,width});}
 function dot(x,y,r,color,alpha){const g=new Graphics().circle(0,0,r).fill({color,alpha});g.position.set(x,y);return g;}
@@ -130,14 +155,52 @@ function floatingLabel(text,color=0xeed5a3,size=30,duration=920,offsetY=-82){
  t.position.set(0,offsetY); t.alpha=0; t.scale.set(.7);
  registerFx(t,duration,(item,p)=>{item.view.y=offsetY-p*44;item.view.alpha=p<.18?p/.18:1-p;item.view.scale.set(.7+Math.min(.5,p*.7));});
 }
-function clashSequence(picked,rival,outcome){
- if(!layer)return;
- const left=glyphText(signs[picked],colors[picked],62); const right=glyphText(signs[rival],colors[rival],62);
- left.position.set(-170,0); right.position.set(170,0); left.alpha=0; right.alpha=0; left.scale.set(.2); right.scale.set(.2);
- layer.addChild(left,right);
- gsap.to(left,{alpha:1,x:-28,duration:reduced?.16:.28,ease:'power2.out'}); gsap.to(right,{alpha:1,x:28,duration:reduced?.16:.28,ease:'power2.out'});
- gsap.to(left.scale,{x:1,y:1,duration:reduced?.16:.28,ease:'back.out(1.8)'}); gsap.to(right.scale,{x:1,y:1,duration:reduced?.16:.28,ease:'back.out(1.8)'});
- gsap.to([left,right],{delay:reduced?.08:.3,x:0,duration:reduced?.12:.14,ease:'power3.in',onComplete:()=>{flashOutcome(outcome);burst(outcome==='draw'?picked:rival,reduced?12:26);burst(picked,reduced?12:26);floatingLabel(outcome==='win'?'پیروزی!':outcome==='draw'?'تعادل':'شکست', outcome==='win'?0xf4d18e:outcome==='draw'?0x9fe1f6:0xd1bdf9, 28); gsap.to([left,right],{alpha:0,scale:1.3,duration:.18,onComplete:()=>{layer.removeChild(left);layer.removeChild(right);left.destroy();right.destroy();}});}});
+async function clashSequence(picked,rival,outcome){
+  const arena=el('arena'),stage=el('battle-stage');
+  if(!stage)return;
+  stage.replaceChildren();
+  const makeCard=(type,enemy)=>{
+    const card=document.createElement('div');
+    card.className=`combat-card ${type}${enemy?' opponent':''}`;
+    const sig=document.createElement('b');sig.textContent=signs[type];
+    const name=document.createElement('small');name.textContent=ELEMENT_LABELS[type];
+    card.append(sig,name);
+    stage.append(card);
+    return card;
+  };
+  const mine=makeCard(picked,false),opponent=makeCard(rival,true);
+  const fast=reduced;
+  await new Promise(resolve=>{
+    const timeline=gsap.timeline({onComplete:resolve});
+    timeline.fromTo(mine,{x:-140,y:140,rotation:-28,scale:.68,autoAlpha:0},{x:-44,y:0,rotation:-9,scale:1,autoAlpha:1,duration:fast?.12:.4,ease:'power3.out'},0)
+      .fromTo(opponent,{x:150,y:-150,rotation:28,scale:.68,autoAlpha:0},{x:44,y:0,rotation:8,scale:1,autoAlpha:1,duration:fast?.12:.45,ease:'power3.out'},0)
+      .to(mine,{x:-8,rotation:-20,duration:fast?.1:.18,ease:'power3.in'},fast?.14:.48)
+      .to(opponent,{x:8,rotation:20,duration:fast?.1:.18,ease:'power3.in'},fast?.14:.48)
+      .call(()=>{
+        flashOutcome(outcome);
+        burst(picked,fast?8:26);
+        burst(rival,fast?8:28);
+        arena.classList.add('battle-impact');
+        if(!fast)gsap.fromTo(arena,{x:0},{x:5,duration:.055,repeat:5,yoyo:true,ease:'none',clearProps:'x'});
+        if(outcome==='win')try{navigator.vibrate?.([30,30,60]);}catch{}
+      },[],fast?.24:.68)
+      .to([mine,opponent],{scale:1.3,autoAlpha:0,duration:fast?.1:.24},fast?.24:.7);
+  });
+  arena.classList.remove('battle-impact');
+  stage.replaceChildren();
+}
+function showBattleOutcome(round,streak){
+ const toast=el('battle-toast');
+ gsap.killTweensOf(toast);
+ const pair=[round.picked,round.rival].sort().join('-');
+ const reaction=round.tree_gain?'♧ درخت تازه رویید':round.light_gain?'✺ نور آزاد شد':reactionLabels[pair]||'نیروها برخورد کردند';
+ toast.dataset.outcome=round.outcome;
+ el('toast-title').textContent={win:'پیروزی!',draw:'تعادل',loss:'این بار شکست خوردی'}[round.outcome];
+ el('toast-points').textContent=round.points>0?`+${fmt(round.points)} امتیاز`:'بدون امتیاز';
+ el('toast-reaction').textContent=(round.outcome==='win'&&streak>=2?`زنجیرهٔ پیروزی ✦ ${fmt(streak)}   ·   `:'')+reaction;
+ toast.hidden=false;
+ gsap.fromTo(toast,{autoAlpha:0,y:20,scale:.84},{autoAlpha:1,y:0,scale:1,duration:reduced?.1:.24,ease:'back.out(1.8)'});
+ gsap.to(toast,{autoAlpha:0,y:-20,delay:reduced?.9:1.65,duration:reduced?.1:.36,onComplete:()=>{toast.hidden=true;}});
 }
 function launchTrail(type,start){
  const trail=new Graphics();
@@ -169,14 +232,6 @@ function tone(freq=260){
   osc.connect(amp).connect(audio.destination);osc.start();osc.stop(audio.currentTime+.19);
  }catch{}
 }
-function resultModal(round){
- el('result-title').textContent={win:'پیروزی نیرو',draw:'هم‌آوایی جهان',loss:'چرخش تقدیر'}[round.outcome];
- el('result-desc').textContent=descriptions[round.outcome];
- el('result-glyph').textContent=resultGlyph[round.outcome];
- el('versus').textContent=`${ELEMENT_LABELS[round.picked]}  ×  ${ELEMENT_LABELS[round.rival]}`;
- el('rewards').textContent=`✧ ${fmt(round.points)} امتیاز${round.tree_gain?'  ·  ♧ ۱ درخت':''}${round.light_gain?'  ·  ✺ ۱ نور':''}`;
- toggleDialog(el('result'),true);
-}
 function setArenaState(state,force=''){
  const arena=el('arena');
  arena.dataset.state=state;
@@ -203,12 +258,12 @@ async function play(name,launch={center:{x:0,y:0},launched:false}){
   }
   setHint(`${ELEMENT_LABELS[name]} با ${ELEMENT_LABELS[res.round.rival]} برخورد کرد`, descriptions[res.round.outcome]);
   await before;
-  clashSequence(name,res.round.rival,res.round.outcome);
+  await clashSequence(name,res.round.rival,res.round.outcome);
+  showBattleOutcome(res.round,player.streak);
   tone(res.round.outcome==='win'?560:res.round.outcome==='draw'?340:175);
   gsap.fromTo('#score',{scale:1.16},{scale:1,duration:.45});
   gsap.fromTo('#rounds',{scale:1.14},{scale:1,duration:.38});
   update();
-  setTimeout(()=>resultModal(res.round),reduced?120:300);
  }catch(err){
   notice(err.message==='UNAUTHORIZED'?'بلیت ورود منقضی شده؛ بازی را دوباره از پیام تلگرام اجرا کن.':err.message==='NO_ELEMENTS'?'این عنصر تمام شده است. فردا دوباره امتحان کن.':'اتصال به سرور بازی برقرار نشد. از وضعیت Worker مطمئن شو.');
  }finally{
@@ -277,7 +332,7 @@ async function showRanking(){
 function share(){
  if(window.TelegramGameProxy?.shareScore&&!practice){window.TelegramGameProxy.shareScore();return;}
  const code=player.invite_code;
- const link=code?`https://t.me/${cfg.botUsername||'elementalgamebot'}?start=ref_${code}`:`https://t.me/${cfg.botUsername||'elementalgamebot'}?game=${cfg.gameShortName||'elemental'}`;
+ const link=code?`https://t.me/${cfg.botUsername||'elementalgamebot'}?start=ref_${code}`:`https://t.me/${cfg.botUsername||'elementalgamebot'}?game=${cfg.gameShortName||'elementals'}`;
  if(navigator.share)navigator.share({title:'عناصر',text:'به بازی عناصر بیا و تعادل را بازگردان.',url:link}).catch(()=>{});
  else if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>notice('لینک بازی کپی شد.'),()=>notice(link)); else notice(link);
 }
@@ -288,17 +343,18 @@ function decorateCards(){
    const title=btn.querySelector('.force-name'); if(title) title.textContent=ELEMENT_LABELS[type];
    const flavor=btn.querySelector('.force-flavor'); if(flavor) flavor.textContent=forceTags[type];
    const usage=btn.querySelector('.force-usage'); if(usage) usage.textContent=forceShots[type];
+   const status=btn.querySelector('.force-status'); if(status) status.textContent=forceStates(player[type]||5);
  });
 }
 async function start(){
  el('demo').hidden=!practice;
- el('weather').textContent=`رویداد امروز: ${world.title} • ${world.text}`;
+ el('weather').textContent=`${world.title} • ${world.text}`;
+ el('arena-weather').textContent=world.title;
  decorateCards();
  document.querySelectorAll('[data-force]').forEach(bindForce);
  el('share').addEventListener('click',share);
  el('ranking').addEventListener('click',showRanking);
  el('close-ranking').addEventListener('click',()=>toggleDialog(el('leaderboard'),false));
- el('next').addEventListener('click',()=>toggleDialog(el('result'),false));
  el('sound').addEventListener('click',()=>{sounds=!sounds;el('sound').textContent=sounds?'♫':'♪';if(sounds)tone(440);});
  setHint('یک کارت را بکش و درون شکاف رها کن','یا فقط روی کارت ضربه بزن');
  try{await initPixi();}
