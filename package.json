@@ -1,21 +1,26 @@
 {
   "name": "elemental",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check worker/src/index.js && node --check worker/src/auth.js && node --check apps/web/engine.js && node --check apps/web/app.js && node --check tgcloud/handlers/message.js && npm test",
+    "check": "node --check worker/src/index.js && node --check worker/src/auth.js && node --check worker/src/game-ticket.js && node --check worker/src/telegram-bot.js && node --check apps/web/engine.js && node --check apps/web/src/main.js && npm test",
     "dev:api": "wrangler dev --config worker/wrangler.jsonc",
     "deploy:api": "wrangler deploy --config worker/wrangler.jsonc",
     "db:create": "wrangler d1 create elemental-game",
     "db:migrate:local": "wrangler d1 migrations apply elemental-game --local --config worker/wrangler.jsonc",
     "db:migrate": "wrangler d1 migrations apply elemental-game --remote --config worker/wrangler.jsonc",
     "tgcloud": "tgcloud",
-    "deploy:bot": "tgcloud push"
+    "deploy:bot": "tgcloud push",
+    "build:web": "vite build --config apps/web/vite.config.js",
+    "dev:web": "vite --config apps/web/vite.config.js"
   },
   "devDependencies": {
     "wrangler": "^4.0.0",
-    "@tgcloud/cli": "^0.2.0"
+    "@tgcloud/cli": "^0.2.0",
+    "pixi.js": "^8.13.0",
+    "vite": "^7.1.0",
+    "gsap": "^3.13.0"
   }
 }

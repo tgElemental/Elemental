@@ -1,41 +1,44 @@
-# Architecture: no paid server
+# Native Telegram Game architecture, v0.2
 
+```text
+  Telegram /game or /start (private chat or group)
+                    |
+        Telegram Bot API sendGame
+                    |
+      Native Play button / Game Callback
+                    |
+  POST Cloudflare Worker /telegram/webhook
+     verified Telegram webhook secret header
+                    |
+   Worker signs short-lived launch ticket with BOT_TOKEN-derived HMAC
+                    |
+  Bot API answerCallbackQuery(Game URL + ticket)
+                    |
+  GitHub Pages /Elemental/ (PixiJS Canvas + Vite bundle)
+                    |
+   Authorization: Bearer <signed Game ticket>
+                    |
+   Cloudflare Worker /api/session and /api/play
+                    |
+   D1 authoritative balances and game scores
+                    |
+    Bot API setGameScore (best-effort)
 ```
-Telegram BotFather + Telegram Serverless message handlers
-                    |
-            Link to Mini App
-                    v
-   GitHub Pages static frontend (no API secrets)
-                    |
-       signed Telegram initData header
-                    v
- Cloudflare Worker -- Telegram HMAC validation
-                    |
-           D1 (authoritative DB)
-              /            \
-        rounds + grants    leaderboard
-```
 
-Why not host scores in GitHub or the Mini App? Static assets and clients are fully modifiable. Scores, rewards, and economic mutations must be server-authoritative.
+No `initData` is promised by Telegram for **native HTML5 Games**. The Worker validates launch tickets it issues in response to authenticated Telegram callbacks. No arbitrary `userId` in an HTTP request body authorizes gameplay. The legacy WebApp signature verifier remains available for older sessions but the new UI uses the Game protocol only.
 
-Why not use Telegram Serverless SQLite as well? Avoid two ledgers or cross-service 2-phase commits. Telegram's new Serverless runtime is used for bot events and menu integration; D1 owns the only gameplay ledger, preserving cloud vendor portability. Hosting the Mini App on Telegram is an optional future experiment.
+For **one bot**, only one Bot API webhook receiver can process updates: use Worker for this version, not both Worker and Telegram Serverless. Telegram Serverless is intentionally retained only as a future integration possibility.
 
-### Cloudflare free ceilings (as of 2026-10)
+Each successful play is committed through a D1 INSERT-and-trigger, with per-action UUID idempotency and server-derived opponent, rewards and score. Score updates back to Telegram are best-effort after the D1 commit, so API outages cannot erase earned progress. Before scale-up, implement a retry outbox, rate limits, score sync recovery, quota monitoring, fraud detection and privacy compliance.
 
-- Workers Free: 100,000 requests per day, 10ms CPU per HTTP request.
-- D1 Free: 5,000,000 rows read/day, 100,000 rows written/day and a 500MB maximum database size per database.
-- When D1 daily quotas are exceeded operations fail until reset. No unlimited promise; test at expected load.
+D1 `pending_invites` stores inviter codes delivered by genuine bot `/start ref_...` updates; referral awards are only applied when a new player first starts a valid game. Scores on the public leaderboard use pseudonymous aliases.
 
-### Security and abuse model
+### Free infrastructure and deployment
 
-- Never use user IDs from a request body or `initDataUnsafe` to authorize mutations; server verifies signed Telegram init data and its age (currently 1h).
-- `start_param` used for referral must be the Telegram-signed value, not a request-body override.
-- An unpredictable idempotency action ID is unique in `rounds` for retries; SQL inserts only when player has inventory.
-- D1 triggers apply reward/debit atomically. `grants` event keys protect against double daily/referral credits.
-- Anonymous aliases on leaderboard (do not expose Telegram identifiers).
-- Limit `.env`, GitHub secrets, Worker secret `BOT_TOKEN`, and Serverless credentials strictly.
-- Additional abuse controls needed before public launch: rate limiting, Sybil/referral abuse detection, support/moderation, GDPR/retention, fraud monitoring.
+- **GitHub Pages** hosts the Vite-built static HTML5 game under `/Elemental/`.
+- **Cloudflare Workers + D1** hold all business logic, store game state and serve the Bot API webhook.
+- **BotFather** owns the native Game short name. No separate paid server.
+- The `Deploy Cloudflare API` workflow resolves the actual D1 ID from Cloudflare and runs migrations and deploys with Actions secrets.
+- The `Deploy mini app to GitHub Pages` workflow (legacy workflow title) now builds and uploads the **native HTML5 game**, not the old Mini App UI.
 
-### Availability caveats
-
-GitHub Pages is static hosting, not an application backend. Telegram can block or change experimental capabilities. Worker and D1 free-tier hard limits mean the system should fail closed on writes and surface a user-friendly outage message. Use Cloudflare Analytics/Observability free features and Telegram Serverless status/logs.
+Production domain, short name, Worker URL and bot token must be checked before enabling `setWebhook`. See `docs/TELEGRAM_GAME.md`.

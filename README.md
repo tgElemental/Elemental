@@ -1,93 +1,49 @@
-# عناصر — چرخهٔ جهان / Elemental
+# عناصر / Elemental — Telegram HTML5 Game
 
-A distinct, RTL-first Telegram Mini App with a no-VPS backend.
+An independently branded, Persian-first **Telegram HTML5 Game** with interactive PixiJS graphics and a serverless authoritative game engine. This is **not** a Telegram Mini App. The native Telegram game message and `Play` button are powered by `sendGame` and `answerCallbackQuery`.
 
-**Status: runnable pre-launch foundation**, not a production deployment.
+**Version 0.2 • implementation-ready, not yet publicly launched**. Never claim production rollout before BotFather registration, Webhook setup, Cloudflare deployment and a real Telegram smoke test.
 
 ## Components
 
-| Part | Host | Path |
+| Component | Purpose | Host |
 |---|---|---|
-| Original mobile-first Mini App and shared game engine | GitHub Pages | `apps/web/` |
-| Authoritative state, referral/daily rewards, leaderboard, Mini App HMAC verification | Cloudflare Worker + D1 | `worker/` |
-| `/start`, `/game`, `/help` | Telegram Serverless | `tgcloud/` |
-| Tests and site deployment | GitHub Actions | `.github/workflows/` |
+| `apps/web/` | Original canvas arena, touch/drag, particles, battle UI, honest browser practice mode | GitHub Pages + Vite + PixiJS + GSAP |
+| `worker/` | Telegram native Game webhook, signed one-hour launch tickets, account state, server-calculated rounds and scores | Cloudflare Workers + D1 |
+| `apps/web/engine.js` | Original four-element cycle with daily affinity, streak and synthesis | Shared pure JS |
+| `tests/` | Battle, authentication, D1, deployment and Telegram Game flow tests | GitHub Actions |
+| `tgcloud/` | Retained legacy Serverless Mini App handler for reference, not active in Game release | Not deployed |
 
-There is no VPS, Docker, or paid database requirement. Free tiers have **hard quotas**; an infinitely replayable game is not unlimited hosting capacity.
+**Zero paid server**: Workers Free and D1 Free have quotas; don't assume infinite free capacity. Game state is D1-authoritative, never browser-authoritative.
 
-## What works in the starter
+## Rules and features
 
-- A dedicated identity: original compass-of-four-forces logo, dark nautical palette, distinct element symbols.
-- A usable mobile web UI with four elemental cards, map, codex, weekly leaderboard, and Telegram haptics.
-- Honest browser practice mode; state/prizes are never persisted in practice.
-- Old victory and synthesis rules restored from `jaavid/elementalgame` plus rotating daily weather affinity and winning streak bonuses.
-- Telegram Mini App `initData` HMAC-SHA256 verification on Worker; no trust in `initDataUnsafe` for account identity.
-- D1 SQL triggers guarantee atomic rounds: idempotent action IDs, inventory decrements, points, tree/light synthesis, weekly scores.
-- Once-per-day free elements and exactly-once inviter reward for new player registration via Telegram-signed start parameter.
+Water defeats fire, fire defeats earth, earth defeats wind, wind defeats water. A win earns 3 points, draw 1. Water+earth creates a tree and fire+wind produces light, regardless of the winner. The world changes daily with one favored element. Win streaks grant bonus points. Five free units of each element are granted daily, invitations grant bonus units once to the inviter, and ranked weekly scores are stored in D1. The bot updates the native Telegram game scoreboard with validated server scores.
 
-## Quick local demo (no tokens)
+## Local commands
 
-```bash
-python3 -m http.server 8000 --directory apps/web
-# Open http://localhost:8000
-node --test tests/*.test.mjs
-python3 -m unittest discover -s tests -p 'test_*.py'
-```
-
-## Publish to the existing organization repository
-
-GitHub repository: [`tgElemental/Elemental`](https://github.com/tgElemental/Elemental).
-
-The starter is not deployed merely because the repository exists. Import the extracted project into a reviewable branch and open a PR using the authenticated GitHub CLI:
-
-```bash
-# In the unzipped `elemental/` folder:
-chmod +x scripts/publish-to-github.sh
-./scripts/publish-to-github.sh
-```
-
-You must have push access via `gh auth login`. Alternatively, grant the ChatGPT GitHub App write access to the new repository under the organization's Installed GitHub Apps → Configure → Repository access; otherwise connector writes may return `403 Resource not accessible by integration` even when public source can be read.
-
-After the PR is merged, go to repository **Settings → Pages → Build and deployment**, select **GitHub Actions**. The `pages.yml` workflow publishes `apps/web/` on a matching `main` push. The expected Pages URL is `https://tgelemental.github.io/Elemental/` (repository name uses uppercase E).
-
-## Cloudflare D1 and Worker
-
-```bash
+```sh
 npm install
-npx wrangler login
-npm run db:create
-# Paste generated `database_id` into worker/wrangler.jsonc.
-# This is a *public resource ID*, not a secret.
-npm run db:migrate
-npx wrangler secret put BOT_TOKEN --config worker/wrangler.jsonc
-# Enter @BotFather token directly at the secret prompt; never commit it.
-npm run deploy:api
+npm run dev:web
+npm test
+python3 -m unittest discover -s tests -p 'test_*.py'
+npm run build:web
 ```
 
-Edit the **public** API URL in `apps/web/config.js` to the deployed Worker URL and commit the change. `ALLOWED_ORIGIN` in `worker/wrangler.jsonc` must exactly match the hosting origin, e.g. `https://tgelemental.github.io` (no path). Worker automatically rejects other browser origins. Set up a Cloudflare account on the free plan; no billing upgrade is necessary for small-scale trials.
+Run Vite in an ordinary browser for **practice only**. Real Telegram scoring is possible only through the bot's callback-issued Game ticket. The ticket never carries a BOT_TOKEN and is removed from URL history on startup.
 
-**Order:** first Cloudflare DB migration, then Worker deployment, then the Pages config URL; test `/health` and Telegram session from the actual bot. Two **manual-only** GitHub Actions (`deploy-worker.yml`, `deploy-telegram.yml`) are included; configure Cloudflare/Tgcloud repository secrets and a production environment before triggering them. They deliberately do not run on every merge.
+## Configure native Telegram Game
 
-## Telegram Serverless
+Follow **[the complete Game deployment guide](docs/TELEGRAM_GAME.md)**. The summary:
 
-From @BotFather, use the existing bot **only after verifying ownership**. Enable Serverless, link it with:
+1. BotFather `/newgame` with Game short name matching `GAME_SHORT_NAME` (default `elemental`) and URL `https://tgelemental.github.io/Elemental/`.
+2. Cloudflare Worker secret `BOT_TOKEN` (already used in v0.1) and **new** `TELEGRAM_WEBHOOK_SECRET`; deploy D1 migration `0002_pending_invites.sql` and Worker.
+3. GitHub Pages Actions variable `ELEMENTAL_API_BASE` is optional if the checked-in `apps/web/config.js` is correct; otherwise set it to the Worker HTTPS origin. Deploy the built `dist/` using Pages workflow.
+4. Run `scripts/register-game-webhook.mjs` locally with the BotFather API token and matching webhook secret. Do not deploy the old `tgcloud` handler for the same bot in parallel: only one update consumer owns the bot webhook.
+5. Send `/game` to the bot and test native Play, scores, referrals, group chats, and browser practice. Then conduct a private beta before public promotion.
 
-```bash
-npx tgcloud login
-npx tgcloud status
-npx tgcloud push
-```
+Review `docs/ARCHITECTURE.md` and `docs/TELEGRAM_GAME.md` before production.
 
-Configure its **Main Mini App** and menu button to `https://tgelemental.github.io/Elemental/`. Assign the `@elementalgamebot` username if retained (or change `apps/web/config.js` and the bot link). Serverless functionality is a newly evolving platform; the CLI and enabled features must be verified on the actual bot before a public release. No local gateway credentials are committed.
+## Non-goals of this change
 
-The starter keeps game state entirely in Cloudflare. Serverless handles inbound `/start`, `/game`, `/help` and points users to the Mini App. Keeping the state at one source avoids split-brain balances between Telegram's beta database and D1.
-
-## Archive legacy repos — after the new repo is pushed and verified
-
-Use `scripts/archive-legacy.sh` (requires authenticated `gh` with admin permissions). Its default mode is **dry run**; it lists targets and verifies their existence, and requires the explicit `--apply` switch for changes. Recommended archive: `new`, `game`, `help`, `minione`; keep `.github` available to maintain the organization profile and link the successor. Consider separately archiving `jaavid/elementalgame` after its last snapshot / backup.
-
-## Non-goals of v0.1
-
-There is no real-money prize, TON token, Stars payment, bot broadcast, automated Cloudflare deploy, live weekly payouts, or anti-Sybil device fingerprinting implemented. Those need separate product decisions and abuse prevention. Avoid claiming otherwise.
-
-See `docs/` for identity, system design, roadmap and launch gates.
+No new real-money/token payouts, crypto wallets, Stars payment flow, complex PvP matchmaking, anti-Sybil guarantees or live weekly reward distribution. These need a separately reviewed product/economy and abuse prevention policy.

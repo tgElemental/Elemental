@@ -19,6 +19,10 @@ jobs:
           node-version: '22'
       - name: Install CLI
         run: npm install --no-audit --no-fund
+      - name: Prevent competing Telegram webhook consumers
+        run: |
+          echo 'Telegram Game v0.2 uses the Cloudflare Worker webhook; deploying the old tgcloud bot on the same token would replace its update consumer.'
+          exit 1
       - name: Verify and deploy
         env:
           TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}

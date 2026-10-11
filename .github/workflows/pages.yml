@@ -1,9 +1,10 @@
-name: Deploy mini app to GitHub Pages
+name: Deploy HTML5 Game to GitHub Pages
 on:
   push:
     branches: [main]
     paths:
       - 'apps/web/**'
+      - 'package.json'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
@@ -21,9 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - name: Configure public API URL
+        env:
+          ELEMENTAL_API_BASE: ${{ vars.ELEMENTAL_API_BASE }}
+        run: node scripts/configure-pages.mjs
+      - run: npm run build:web
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/web
+          path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
