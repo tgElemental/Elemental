@@ -19,18 +19,19 @@
   </header>
   <div id="demo" class="practice-banner" hidden>حالت تمرینی — برای ثبت امتیاز، از پیام Game تلگرام وارد شو</div>
   <div class="intro"><div class="eyebrow">فصل اول • آستانهٔ آفرینش</div><h1>تعادل را <em>بیدار کن</em></h1><p id="weather">جهان هر روز قوانین تازه‌ای دارد.</p></div>
-  <div class="arena-wrap" id="arena" role="img" aria-label="میدان نبرد تعاملی چهار عنصر">
+  <div class="arena-wrap" id="arena" data-state="idle" role="img" aria-label="میدان نبرد تعاملی چهار عنصر">
     <div id="pixi-stage" class="pixi-stage"></div>
-    <div class="arena-caption"><span class="cross-icon">✥</span><span id="arenaHint">یک عنصر را لمس کن یا به درون حلقه بکش</span></div>
+    <div class="drop-zone" aria-hidden="true"><span>رها کن</span></div>
+    <div class="arena-caption"><span class="cross-icon">✥</span><span id="arenaHint">یک کارت را بکش و درون شکاف رها کن</span><small id="arenaMeta">یا فقط روی کارت ضربه بزن</small></div>
     <div class="rift-title">THE RIFT / 01</div>
   </div>
   <div class="score-line" aria-live="polite"><div><small>نبردها</small><strong id="rounds">۰</strong></div><span class="score-separator"></span><div><small>رویش</small><strong id="trees">۰</strong></div><span class="score-separator"></span><div><small>نور</small><strong id="lights">۰</strong></div><span class="score-separator"></span><div><small>پیروزی‌های پیاپی</small><strong id="streak">۰</strong></div></div>
-  <section class="hand" aria-label="انتخاب نیروی نبرد"><div class="hand-label"><span>نیروهای تو</span><span class="hand-guide">بکش یا ضربه بزن</span></div>
+  <section class="hand" aria-label="انتخاب نیروی نبرد"><div class="hand-label"><span>نیروهای تو</span><span class="hand-guide">بکش، رها کن، برخورد را تماشا کن</span></div>
     <div class="force-grid" id="force-grid">
-      <button type="button" class="force water" data-force="water"><span class="force-number">01 / WATER</span><span class="force-glyph">◈</span><span class="force-bottom"><b>آب</b><small id="stock-water">۵</small></span></button>
-      <button type="button" class="force fire" data-force="fire"><span class="force-number">02 / FIRE</span><span class="force-glyph">✦</span><span class="force-bottom"><b>آتش</b><small id="stock-fire">۵</small></span></button>
-      <button type="button" class="force earth" data-force="earth"><span class="force-number">03 / EARTH</span><span class="force-glyph">⬡</span><span class="force-bottom"><b>خاک</b><small id="stock-earth">۵</small></span></button>
-      <button type="button" class="force wind" data-force="wind"><span class="force-number">04 / WIND</span><span class="force-glyph">≋</span><span class="force-bottom"><b>باد</b><small id="stock-wind">۵</small></span></button>
+      <button type="button" class="force water" data-force="water"><span class="force-sheen"></span><span class="force-number">01 / WATER</span><span class="force-glyph">◈</span><span class="force-name">آب</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-water"></span></span><span class="force-bottom"><small id="stock-water">۵</small><i class="force-usage"></i></span></button>
+      <button type="button" class="force fire" data-force="fire"><span class="force-sheen"></span><span class="force-number">02 / FIRE</span><span class="force-glyph">✦</span><span class="force-name">آتش</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-fire"></span></span><span class="force-bottom"><small id="stock-fire">۵</small><i class="force-usage"></i></span></button>
+      <button type="button" class="force earth" data-force="earth"><span class="force-sheen"></span><span class="force-number">03 / EARTH</span><span class="force-glyph">⬡</span><span class="force-name">خاک</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-earth"></span></span><span class="force-bottom"><small id="stock-earth">۵</small><i class="force-usage"></i></span></button>
+      <button type="button" class="force wind" data-force="wind"><span class="force-sheen"></span><span class="force-number">04 / WIND</span><span class="force-glyph">≋</span><span class="force-name">باد</span><span class="force-flavor"></span><span class="force-meter"><span id="meter-wind"></span></span><span class="force-bottom"><small id="stock-wind">۵</small><i class="force-usage"></i></span></button>
     </div>
   </section>
   <div class="actions"><button type="button" id="share" class="action-primary">دعوت یک نگهبان تازه <span>↗</span></button><button type="button" id="ranking" class="action-muted">جدول برترین‌ها <span>♜</span></button></div>
