@@ -22,12 +22,12 @@ export async function processTelegramUpdate(update,env){
       // Claiming a referral does not credit anyone until their first authenticated game session.
       await env.DB.prepare('INSERT INTO pending_invites(player_id,invite_code) VALUES (?,?) ON CONFLICT(player_id) DO NOTHING').bind(String(message.from.id),match[1].slice(4)).run();
     }
-    await telegramAPI(env,'sendGame',{chat_id:message.chat.id,game_short_name:env.GAME_SHORT_NAME||'elemental'});
+    await telegramAPI(env,'sendGame',{chat_id:message.chat.id,game_short_name:env.GAME_SHORT_NAME||'elementals'});
     return;
   }
   const query=update?.callback_query;
   if(!query?.game_short_name)return;
-  if(query.game_short_name!==(env.GAME_SHORT_NAME||'elemental')){
+  if(query.game_short_name!==(env.GAME_SHORT_NAME||'elementals')){
     await telegramAPI(env,'answerCallbackQuery',{callback_query_id:query.id,text:'بازی درخواستی شناسایی نشد.',show_alert:true});return;
   }
   const context=query.inline_message_id?{id:query.from.id,inlineMessageId:query.inline_message_id}:
