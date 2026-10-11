@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "database_name": "elemental-game",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "47d1d4f7-56ae-4324-bd69-afdbf57ebca3",
       "migrations_dir": "migrations"
     }
   ]
